@@ -9,31 +9,46 @@ def agg_jc_index(mask, pred):
     Returns: Aggregated Jaccard index for GT & mask 
     """
     
-    c = 0   # intersection
-    u = 0   # unio
-    pred_mark_used = []
+    
+    c = 0 # count intersection
+    u = 0 # count union
+    tqdm.monitor_interval = 0 # disable tqdm monitor to prevent warning message
+    pred_instance = pred.max() # predcition instance number
+    pred_mark_used = [] # mask used
+    pred_mark_isused = np.zeros((pred_instance+1), dtype=bool)
+    
     for idx_m in tqdm_notebook(range(len(mask[0,0,:]))):
         m = mask[:,:,idx_m]
         intersect_list = []
         union_list = []
-        for idx_pred in range(1, int(np.max(pred))+1):
-            p = (pred==idx_pred)
-            intersect = np.count_nonzero(m & p)
-            union = np.count_nonzero(m) + np.count_nonzero(p) - intersect
-            #print(intersect, union)
+        iou_list = []
+        
+        for idx_pred in range(1, pred_instance+1):
+            # check the prediction has been used or not
+            if pred_mark_isused[idx_pred] == True:
+                intersect = 0
+                union = 1
+            else:
+                p = (pred == idx_pred)
+                
+                # replace multiply with bool operation 
+                intersect = np.count_nonzero((m!=0) & p)
+                union = np.count_nonzero(m!=0) + np.count_nonzero(p) - intersect
+            
             intersect_list.append(intersect)
             union_list.append(union)
             
-        hit_idx = np.argmax(np.array(intersect_list)/np.array(union_list))
+        iou_list = np.array(intersect_list) / np.array(union_list)    
+        hit_idx = np.argmax(np.array(iou_list))
         c += intersect_list[hit_idx]
         u += union_list[hit_idx]
         pred_mark_used.append(hit_idx)
-        #print(pred_mark_used)
+        pred_mark_isused[hit_idx] = True
         
     pred_mark_used = [x+1 for x in pred_mark_used]
     pred_fp = set(np.unique(pred)) - {0} - set(pred_mark_used)
     pred_fp_pixel = np.sum([np.sum(pred==i) for i in pred_fp])
 
     u += pred_fp_pixel
-    print(c / u)
-    return c / u
+    print (c / u)
+    return (c / u)
