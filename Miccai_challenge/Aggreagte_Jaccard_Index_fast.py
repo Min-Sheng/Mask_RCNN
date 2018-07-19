@@ -8,8 +8,7 @@ def agg_jc_index(mask, pred):
 
     Returns: Aggregated Jaccard index for GT & mask 
     """
-    
-    
+
     c = 0 # count intersection
     u = 0 # count union
     tqdm.monitor_interval = 0 # disable tqdm monitor to prevent warning message
@@ -27,7 +26,7 @@ def agg_jc_index(mask, pred):
             # check the prediction has been used or not
             if pred_mark_isused[idx_pred] == True:
                 intersect = 0
-                union = 1
+                union = np.count_nonzero(m!=0)
             else:
                 p = (pred == idx_pred)
                 
@@ -43,7 +42,7 @@ def agg_jc_index(mask, pred):
         c += intersect_list[hit_idx]
         u += union_list[hit_idx]
         pred_mark_used.append(hit_idx)
-        pred_mark_isused[hit_idx] = True
+        pred_mark_isused[hit_idx+1] = True
         
     pred_mark_used = [x+1 for x in pred_mark_used]
     pred_fp = set(np.unique(pred)) - {0} - set(pred_mark_used)
